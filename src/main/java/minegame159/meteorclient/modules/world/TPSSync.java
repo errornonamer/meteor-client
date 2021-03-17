@@ -31,7 +31,7 @@ public class TPSSync extends Module {
     @EventHandler
     private void onTick(TickEvent.Post event) {
         Timer timer = Modules.get().get(Timer.class);
-        if (!timerState) {
+        if (!timer.isActive()) {
             timer.toggle();
         }
         timer.setOverride(TickRate.INSTANCE.getTickRate() / 20);

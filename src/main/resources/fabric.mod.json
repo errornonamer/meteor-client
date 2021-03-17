@@ -34,7 +34,7 @@
   "accessWidener": "meteor-client.accesswidener",
 
   "custom": {
-    "meteor-client:devbuild": "@devbuild@"
+    "meteor-client:devbuild": "errornonamer build"
   },
 
   "depends": {

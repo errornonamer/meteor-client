@@ -77,7 +77,7 @@ public class CompassHud extends HudElement {
         double pitch = 0;
         if (!isInEditor()) pitch = mc.player.pitch;
 
-        return Math.cos(rad) * Math.sin(Math.toRadians(MathHelper.clamp(pitch + 30.0f, -90.0f, 90.0f))) * (scale.get() * 40);
+        return Math.cos(rad) * Math.sin(Math.toRadians(MathHelper.clamp(pitch, -90.0f, 90.0f))) * (scale.get() * 40);
     }
 
     private double getPosOnCompass(Direction dir) {

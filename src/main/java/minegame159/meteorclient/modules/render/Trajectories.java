@@ -12,6 +12,7 @@ import minegame159.meteorclient.modules.Categories;
 import minegame159.meteorclient.modules.Module;
 import minegame159.meteorclient.rendering.Renderer;
 import minegame159.meteorclient.rendering.ShapeMode;
+import minegame159.meteorclient.settings.BoolSetting;
 import minegame159.meteorclient.settings.ColorSetting;
 import minegame159.meteorclient.settings.EnumSetting;
 import minegame159.meteorclient.settings.Setting;
@@ -20,9 +21,20 @@ import minegame159.meteorclient.utils.Utils;
 import minegame159.meteorclient.utils.misc.Pool;
 import minegame159.meteorclient.utils.misc.Vec3;
 import minegame159.meteorclient.utils.render.color.SettingColor;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.projectile.ArrowEntity;
+import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
+import net.minecraft.entity.projectile.FishingBobberEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.TridentEntity;
+import net.minecraft.entity.projectile.thrown.PotionEntity;
+import net.minecraft.entity.projectile.thrown.ThrownEntity;
 import net.minecraft.item.*;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
@@ -32,6 +44,12 @@ import java.util.List;
 
 public class Trajectories extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
+
+    private final Setting<Boolean> drawOther = sgGeneral.add(new BoolSetting.Builder()
+            .name("draw-other")
+            .description("Draw trajectories of already thrown projectiles.")
+            .defaultValue(false)
+            .build());
 
     private final Setting<ShapeMode> shapeMode = sgGeneral.add(new EnumSetting.Builder<ShapeMode>()
             .name("shape-mode")
@@ -54,13 +72,15 @@ public class Trajectories extends Module {
             .build()
     );
 
-    private final Vec3d vec3d = new Vec3d(0, 0, 0);
+    private final Vec3d vec3d1 = new Vec3d(0, 0, 0);
+    private final Vec3d vec3d2 = new Vec3d(0, 0, 0);
 
     private final Pool<Vec3> vec3s = new Pool<>(Vec3::new);
     private final List<Vec3> path = new ArrayList<>();
 
-    private boolean hitQuad, hitQuadHorizontal;
+    private boolean hitQuad, hitQuadHorizontal, hitBox;
     private double hitQuadX1, hitQuadY1, hitQuadZ1, hitQuadX2, hitQuadY2, hitQuadZ2;
+    private double hitBoxMinX, hitBoxMinY, hitBoxMinZ, hitBoxMaxX, hitBoxMaxY, hitBoxMaxZ;
 
     public Trajectories() {
         super(Categories.Render, "trajectories", "Predicts the trajectory of throwable items.");
@@ -68,6 +88,29 @@ public class Trajectories extends Module {
 
     @EventHandler
     private void onRender(RenderEvent event) {
+        if (drawOther.get()) {
+            for (Entity e : mc.world.getEntities()) {
+                if (e instanceof ProjectileEntity) {
+                    if (e instanceof FishingBobberEntity) {
+                        continue;
+                    }
+                    if (e instanceof ArrowEntity) {
+                        CompoundTag tag = new CompoundTag();
+                        ((ArrowEntity) e).writeCustomDataToTag(tag);
+                        if (tag.contains("inGround") && tag.getBoolean("inGround")) {   // why tf is this shit protected
+                            continue;
+                        }
+                    }
+
+                    Vec3d pos = e.getPos();
+                    Vec3d vel = e.getVelocity();
+                    
+                    calculatePath(event.tickDelta, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, getEntityGravity(e), e);
+                    render();
+                }
+            }
+        }
+
         Item item = mc.player.getMainHandStack().getItem();
         if (!Utils.isThrowable(item)) {
             item = mc.player.getOffHandStack().getItem();
@@ -75,7 +118,11 @@ public class Trajectories extends Module {
         }
 
         calculatePath(event.tickDelta, item);
-
+        render();
+    }
+    
+    private void render()
+    {
         Vec3 lastPoint = null;
         for (Vec3 point : path) {
             if (lastPoint != null) Renderer.LINES.line(lastPoint.x, lastPoint.y, lastPoint.z, point.x, point.y, point.z, lineColor.get());
@@ -85,6 +132,9 @@ public class Trajectories extends Module {
         if (hitQuad) {
             if (hitQuadHorizontal) Renderer.quadWithLinesHorizontal(Renderer.NORMAL, Renderer.LINES, hitQuadX1, hitQuadY1, hitQuadZ1, 0.5, sideColor.get(), lineColor.get(), shapeMode.get());
             else Renderer.quadWithLinesVertical(Renderer.NORMAL, Renderer.LINES, hitQuadX1, hitQuadY1, hitQuadZ1, hitQuadX2, hitQuadY2, hitQuadZ2, sideColor.get(), lineColor.get(), shapeMode.get());
+        }
+        if (hitBox) {
+            Renderer.boxWithLines(Renderer.NORMAL, Renderer.LINES, hitBoxMinX, hitBoxMinY, hitBoxMinZ, hitBoxMaxX, hitBoxMaxY, hitBoxMaxZ, sideColor.get(), lineColor.get(), shapeMode.get(), 0);
         }
     }
 
@@ -135,8 +185,11 @@ public class Trajectories extends Module {
         }
 
         double gravity = getProjectileGravity(item);
-        Vec3d eyesPos = mc.player.getPos().add(0, mc.player.getEyeHeight(mc.player.getPose()), 0);
 
+        calculatePath(tickDelta, x, y, z, velocityX, velocityY, velocityZ, gravity, mc.player);
+    }
+
+    private void calculatePath(float tickDelta, double x, double y, double z, double velocityX, double velocityY, double velocityZ, double gravity, Entity ent) {
         HitResult lastHitResult = null;
 
         while (true) {
@@ -164,8 +217,9 @@ public class Trajectories extends Module {
             if (!mc.world.getChunkManager().isChunkLoaded(chunkX, chunkZ)) break;
 
             // Check for collision
-            ((IVec3d) vec3d).set(pos);
-            RaycastContext context = new RaycastContext(eyesPos, vec3d, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, mc.player);
+            ((IVec3d) vec3d1).set(pos);
+            ((IVec3d) vec3d2).set(x, y, z);
+            RaycastContext context = new RaycastContext(vec3d1, vec3d2, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, ent);
             lastHitResult = mc.world.raycast(context);
             if (lastHitResult.getType() != HitResult.Type.MISS) break;
         }
@@ -174,6 +228,7 @@ public class Trajectories extends Module {
             BlockHitResult r = (BlockHitResult) lastHitResult;
 
             hitQuad = true;
+            hitBox = false;
             hitQuadX1 = r.getPos().x;
             hitQuadY1 = r.getPos().y;
             hitQuadZ1 = r.getPos().z;
@@ -200,7 +255,31 @@ public class Trajectories extends Module {
                 hitQuadZ2 += 0.25;
                 hitQuadY2 += 0.25;
             }
-        } else hitQuad = false;
+        } 
+        else if (lastHitResult != null && lastHitResult.getType() == HitResult.Type.ENTITY) {
+            EntityHitResult r = (EntityHitResult) lastHitResult;
+
+            hitQuad = false;
+            hitBox = true;
+            
+            Entity entity = r.getEntity();
+            Box bbox = entity.getBoundingBox();
+
+            double ex = (entity.getX() - entity.prevX) * tickDelta;
+            double ey = (entity.getY() - entity.prevY) * tickDelta;
+            double ez = (entity.getZ() - entity.prevZ) * tickDelta;
+
+            hitBoxMinX = ex + bbox.minX;
+            hitBoxMinY = ey + bbox.minY;
+            hitBoxMinZ = ez + bbox.minZ;
+            hitBoxMaxX = ex + bbox.maxX;
+            hitBoxMaxY = ey + bbox.maxY;
+            hitBoxMaxZ = ez + bbox.maxZ;
+
+        } else {
+            hitQuad = false;
+            hitBox = false;
+        }
     }
 
     private double getProjectileGravity(Item item) {
@@ -210,6 +289,16 @@ public class Trajectories extends Module {
         if(item instanceof TridentItem) return 0.015;
 
         return 0.03;
+    }
+    
+    private double getEntityGravity(Entity entity) {
+        if (entity.hasNoGravity()) return 0.0;
+        if (entity instanceof PotionEntity) return 0.4;
+        if (entity instanceof ArrowEntity) return 0.05;
+        if (entity instanceof TridentEntity) return 0.015;
+        if (entity instanceof ExplosiveProjectileEntity) return 0.0;
+        if (entity instanceof ThrownEntity) return 0.03;
+        return 0;
     }
 
     private Vec3 addToPath(double x, double y, double z) {

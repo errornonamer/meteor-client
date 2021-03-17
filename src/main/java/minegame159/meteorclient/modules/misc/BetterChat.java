@@ -8,6 +8,7 @@ package minegame159.meteorclient.modules.misc;
 import it.unimi.dsi.fastutil.chars.Char2CharArrayMap;
 import it.unimi.dsi.fastutil.chars.Char2CharMap;
 import meteordevelopment.orbit.EventHandler;
+import minegame159.meteorclient.Config;
 import minegame159.meteorclient.commands.Commands;
 import minegame159.meteorclient.commands.commands.Say;
 import minegame159.meteorclient.events.entity.player.SendMessageEvent;
@@ -178,7 +179,7 @@ public class BetterChat extends Module {
     private final Setting<String> suffixText = sgSuffix.add(new StringSetting.Builder()
             .name("text")
             .description("The text to add as your suffix.")
-            .defaultValue(" | Meteor on Crack!")
+            .defaultValue(" | Meteor " + Config.get().version.getOriginalString())
             .build()
     );
 

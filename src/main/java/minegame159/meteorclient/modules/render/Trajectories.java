@@ -26,6 +26,7 @@ import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.entity.projectile.TridentEntity;
 import net.minecraft.entity.projectile.thrown.PotionEntity;
 import net.minecraft.entity.projectile.thrown.ThrownEntity;
@@ -105,7 +106,7 @@ public class Trajectories extends Module {
                     Vec3d pos = e.getPos();
                     Vec3d vel = e.getVelocity();
                     
-                    calculatePath(event.tickDelta, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, getEntityGravity(e), e);
+                    calculatePath(event.tickDelta, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, getEntityGravity(e), e, e.getBoundingBox());
                     render();
                 }
             }
@@ -139,10 +140,6 @@ public class Trajectories extends Module {
     }
 
     private void calculatePath(float tickDelta, Item item) {
-        // Clear path and target
-        for (Vec3 point : path) vec3s.free(point);
-        path.clear();
-
         // Calculate starting position
         double x = mc.player.lastRenderX + (mc.player.getX() - mc.player.lastRenderX) * tickDelta - Math.cos(Math.toRadians(mc.player.yaw)) * 0.16;
         double y = mc.player.lastRenderY + (mc.player.getY() - mc.player.lastRenderY) * tickDelta + mc.player.getStandingEyeHeight() - 0.1;
@@ -186,13 +183,18 @@ public class Trajectories extends Module {
 
         double gravity = getProjectileGravity(item);
 
-        calculatePath(tickDelta, x, y, z, velocityX, velocityY, velocityZ, gravity, mc.player);
+        calculatePath(tickDelta, x, y, z, velocityX, velocityY, velocityZ, gravity, mc.player, new Box(1.0, 1.0, 1.0, 1.0, 1.0, 1.0));    // TODO: figure out proper bounding box
     }
 
-    private void calculatePath(float tickDelta, double x, double y, double z, double velocityX, double velocityY, double velocityZ, double gravity, Entity ent) {
+    private void calculatePath(float tickDelta, double x, double y, double z, double velocityX, double velocityY, double velocityZ, double gravity, Entity ent, Box box) {
+        // Clear path and target
+        for (Vec3 point : path) vec3s.free(point);
+        path.clear();
+
         HitResult lastHitResult = null;
 
-        while (true) {
+        //while (true) {
+        for (int i = 0; i < 10000; i++) {
             // Add to path
             Vec3 pos = addToPath(x, y, z);
 
@@ -221,7 +223,16 @@ public class Trajectories extends Module {
             ((IVec3d) vec3d2).set(x, y, z);
             RaycastContext context = new RaycastContext(vec3d1, vec3d2, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, ent);
             lastHitResult = mc.world.raycast(context);
-            if (lastHitResult.getType() != HitResult.Type.MISS) break;
+            if (lastHitResult != null && lastHitResult.getType() != HitResult.Type.MISS) break;
+            
+            /*lastHitResult = ProjectileUtil.raycast(ent, vec3d1, vec3d2, box.stretch(new Vec3d(velocityX, velocityY, velocityZ)).expand(1.0D), (e) -> {
+                return e.collides() && e != (ent instanceof ProjectileEntity ? ((ProjectileEntity) ent).getOwner() : mc.player);
+            }, vec3d2.distanceTo(vec3d1));*/
+            lastHitResult = ProjectileUtil.getEntityCollision(mc.world, ent, vec3d1, vec3d2, box.stretch(new Vec3d(velocityX, velocityY, velocityZ)).expand(1.0D).offset(vec3d1), (e) -> {
+                return e.collides() && e != (ent instanceof ProjectileEntity ? ((ProjectileEntity) ent).getOwner() : mc.player);
+            });
+
+            if (lastHitResult != null && lastHitResult.getType() != HitResult.Type.MISS) break;
         }
 
         if (lastHitResult != null && lastHitResult.getType() == HitResult.Type.BLOCK) {

@@ -508,6 +508,7 @@ public class Modules extends System<Modules> {
         add(new PacketMine());
         add(new StashFinder());
         add(new Timer());
+        add(new TPSSync());
         add(new VeinMiner());
         add(new InstaMine());
     }
@@ -515,6 +516,7 @@ public class Modules extends System<Modules> {
     private void initMisc() {
         add(new Announcer());
         add(new AntiPacketKick());
+        add(new AntiGhostBlocks());
         add(new AutoReconnect());
         add(new BetterChat());
         add(new BookBot());

@@ -8,11 +8,8 @@ package minegame159.meteorclient.modules;
 import minegame159.meteorclient.Config;
 import minegame159.meteorclient.MeteorClient;
 import minegame159.meteorclient.events.meteor.ModuleVisibilityChangedEvent;
-import minegame159.meteorclient.gui.WidgetScreen;
-import minegame159.meteorclient.gui.screens.ModuleScreen;
+import minegame159.meteorclient.gui.GuiTheme;
 import minegame159.meteorclient.gui.widgets.WWidget;
-import minegame159.meteorclient.settings.Setting;
-import minegame159.meteorclient.settings.SettingGroup;
 import minegame159.meteorclient.settings.Settings;
 import minegame159.meteorclient.utils.Utils;
 import minegame159.meteorclient.utils.misc.ISerializable;
@@ -43,7 +40,7 @@ public abstract class Module implements ISerializable<Module> {
     public boolean serialize = true;
 
     public final Keybind keybind = Keybind.fromKey(-1);
-    public boolean toggleOnKeyRelease = false;
+    public boolean toggleOnBindRelease = false;
 
     public Module(Category category, String name, String description) {
         this.mc = MinecraftClient.getInstance();
@@ -54,16 +51,8 @@ public abstract class Module implements ISerializable<Module> {
         this.color = Color.fromHsv(Utils.random(0.0, 360.0), 0.35, 1);
     }
 
-    public WidgetScreen getScreen() {
-        return new ModuleScreen(this);
-    }
-
-    public WWidget getWidget() {
+    public WWidget getWidget(GuiTheme theme) {
         return null;
-    }
-
-    public void openScreen() {
-        mc.openScreen(getScreen());
     }
 
     public void doAction(boolean onActivateDeactivate) {
@@ -81,11 +70,7 @@ public abstract class Module implements ISerializable<Module> {
             active = true;
             Modules.get().addActive(this);
 
-            for (SettingGroup sg : settings) {
-                for (Setting setting : sg) {
-                    if (setting.onModuleActivated != null) setting.onModuleActivated.accept(setting);
-                }
-            }
+            settings.onActivated();
 
             if (onActivateDeactivate) {
                 MeteorClient.EVENT_BUS.subscribe(this);
@@ -117,7 +102,7 @@ public abstract class Module implements ISerializable<Module> {
 
         tag.putString("name", name);
         tag.put("keybind", keybind.toTag());
-        tag.putBoolean("toggleOnKeyRelease", toggleOnKeyRelease);
+        tag.putBoolean("toggleOnKeyRelease", toggleOnBindRelease);
         tag.put("settings", settings.toTag());
 
         tag.putBoolean("active", active);
@@ -132,7 +117,7 @@ public abstract class Module implements ISerializable<Module> {
         if (tag.contains("key")) keybind.set(true, tag.getInt("key"));
         else keybind.fromTag(tag.getCompound("keybind"));
 
-        toggleOnKeyRelease = tag.getBoolean("toggleOnKeyRelease");
+        toggleOnBindRelease = tag.getBoolean("toggleOnKeyRelease");
 
         // Settings
         Tag settingsTag = tag.get("settings");

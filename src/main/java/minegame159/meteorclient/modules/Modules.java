@@ -227,7 +227,7 @@ public class Modules extends System<Modules> {
     private void onAction(boolean isKey, int value, boolean isPress) {
         if (MinecraftClient.getInstance().currentScreen == null && !Input.isKeyPressed(GLFW.GLFW_KEY_F3)) {
             for (Module module : modules.values()) {
-                if (module.keybind.matches(isKey, value) && (isPress || module.toggleOnKeyRelease)) {
+                if (module.keybind.matches(isKey, value) && (isPress || module.toggleOnBindRelease)) {
                     module.doAction();
                     module.sendToggledMsg();
                 }
@@ -240,7 +240,7 @@ public class Modules extends System<Modules> {
     @EventHandler(priority = EventPriority.HIGHEST + 1)
     private void onOpenScreen(OpenScreenEvent event) {
         for (Module module : modules.values()) {
-            if (module.toggleOnKeyRelease) {
+            if (module.toggleOnBindRelease) {
                 if (module.isActive()) {
                     module.toggle();
                     module.sendToggledMsg();
@@ -349,7 +349,7 @@ public class Modules extends System<Modules> {
         add(new AntiAnvil());
         add(new AntiAnchor());
         add(new AntiBed());
-        add(new AntiFriendHit());
+        add(new AntiHit());
         add(new ArrowDodge());
         add(new Auto32K());
         add(new AutoAnvil());
@@ -442,6 +442,7 @@ public class Modules extends System<Modules> {
         add(new Scaffold());
         add(new Speed());
         add(new Spider());
+        add(new Slippy());
         add(new Step());
         add(new Velocity());
     }
@@ -483,6 +484,8 @@ public class Modules extends System<Modules> {
         add(new ModelTweaks());
         add(new LightOverlay());
         add(new Zoom());
+        add(new WallHack());
+        add(new WaypointsModule());
     }
 
     private void initWorld() {
@@ -521,6 +524,7 @@ public class Modules extends System<Modules> {
         add(new BetterChat());
         add(new BookBot());
         add(new DiscordPresence());
+        add(new MapPreview());
         add(new MessageAura());
         add(new MiddleClickFriend());
         add(new OffhandCrash());
@@ -529,6 +533,7 @@ public class Modules extends System<Modules> {
         add(new Spam());
         add(new VisualRange());
         add(new VanillaSpoof());
+        add(new AntiBot());
     }
 
     public static class ModuleRegistry extends Registry<Module> {

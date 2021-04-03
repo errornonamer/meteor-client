@@ -25,7 +25,7 @@ public class CustomFOV extends Module {
             .build()
     );
 
-    private float _fov;
+    public float _fov;
 
     public CustomFOV() {
         super(Categories.Render, "custom-fov", "Allows your FOV to be more customizable.");

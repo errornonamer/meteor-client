@@ -59,6 +59,7 @@
     "FireworksSparkParticleMixin",
     "FluidBlockMixin",
     "FluidRendererMixin",
+    "GameOptionsMixin",
     "GameRendererMixin",
     "GenericContainerScreenMixin",
     "HandledScreenMixin",

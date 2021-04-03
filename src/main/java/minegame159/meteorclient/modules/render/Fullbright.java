@@ -37,13 +37,13 @@ public class Fullbright extends Module {
         StaticListener.timesEnabled--;
     }
 
-    private static class StaticListener {
+    public static class StaticListener {
         private static final MinecraftClient mc = MinecraftClient.getInstance();
 
         private static int timesEnabled;
         private static int lastTimesEnabled;
 
-        private static double prevGamma;
+        public static double prevGamma;
 
         @EventHandler
         private static void onTick(TickEvent.Post event) {

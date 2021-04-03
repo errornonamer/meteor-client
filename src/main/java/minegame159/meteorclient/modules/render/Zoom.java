@@ -42,8 +42,8 @@ public class Zoom extends Module {
             .build()
     );
 
-    private boolean preCinematic;
-    private double preMouseSensitivity;
+    public boolean preCinematic;
+    public double preMouseSensitivity;
     private double value;
     private double lastFov;
 

@@ -1,10 +1,10 @@
 package minegame159.meteorclient.mixin;
 
-import minegame159.meteorclient.modules.Modules;
-import minegame159.meteorclient.modules.render.CustomFOV;
-import minegame159.meteorclient.modules.render.Fullbright;
-import minegame159.meteorclient.modules.render.Fullbright.StaticListener;
-import minegame159.meteorclient.modules.render.Zoom;
+import minegame159.meteorclient.systems.modules.Modules;
+import minegame159.meteorclient.systems.modules.render.CustomFOV;
+import minegame159.meteorclient.systems.modules.render.Fullbright;
+import minegame159.meteorclient.systems.modules.render.Fullbright.StaticListener;
+import minegame159.meteorclient.systems.modules.render.Zoom;
 import net.minecraft.client.options.GameOptions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

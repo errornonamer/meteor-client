@@ -13,13 +13,13 @@ import java.util.List;
 public class WallHack extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
-    public final Setting<Integer> opacity = sgGeneral.add(new IntSetting.Builder()
+    public final Setting<Double> opacity = sgGeneral.add(new DoubleSetting.Builder()
             .name("opacity")
             .description("The opacity for rendered blocks.")
             .defaultValue(1)
-            .min(1)
-            .max(255)
-            .sliderMax(255)
+            .min(0)
+            .max(1)
+            .sliderMax(1)
             .onChanged(onChanged -> {
                 if(this.isActive()) {
                     mc.worldRenderer.reload();

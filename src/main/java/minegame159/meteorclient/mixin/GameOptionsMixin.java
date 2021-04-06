@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GameOptions.class)
 public abstract class GameOptionsMixin {
@@ -19,7 +20,7 @@ public abstract class GameOptionsMixin {
     @Shadow public double gamma;                //fullbright
 
     @Inject(method = "write", at = @At("HEAD"))
-    public void writeStart() {
+    public void onWriteHead(CallbackInfo info) {
         CustomFOV cfov = Modules.get().get(CustomFOV.class);
         Fullbright fb = Modules.get().get(Fullbright.class);
         Zoom z = Modules.get().get(Zoom.class);
@@ -37,7 +38,7 @@ public abstract class GameOptionsMixin {
     }
 
     //@Inject(method = "write", at = @At("RETURN"))
-    //public void writeEnd() {
+    //public void onWriteReturn(CallbackInfo info) {
         // none of the above needs to be restored manually since they're being constantly updated on tick
         // if you add any module that modifies gameoption and does not update on tick, add here
     //}

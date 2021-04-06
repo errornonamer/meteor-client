@@ -531,6 +531,7 @@ public class Modules extends System<Modules> {
         add(new PacketCanceller());
         add(new SoundBlocker());
         add(new Spam());
+        add(new StrongholdFinder());
         add(new VisualRange());
         add(new VanillaSpoof());
         add(new AntiBot());

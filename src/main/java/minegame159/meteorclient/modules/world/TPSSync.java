@@ -12,28 +12,15 @@ public class TPSSync extends Module {
         super(Categories.World, "tps-sync", "Attemps to sync client tickrate with server's");
     }
 
-    private boolean timerState = false;
-
-    @Override
-    public void onActivate() {
-        Timer timer = Modules.get().get(Timer.class);
-        timerState = timer.isActive();
-    }
-
     @Override
     public void onDeactivate() {
         Timer timer = Modules.get().get(Timer.class);
-        timer.setOverride(-1);
-        if (timer.isActive() != timerState)
-            timer.toggle();
+        timer.setOverride(1);
     }
     
     @EventHandler
     private void onTick(TickEvent.Post event) {
         Timer timer = Modules.get().get(Timer.class);
-        if (!timer.isActive()) {
-            timer.toggle();
-        }
-        timer.setOverride(TickRate.INSTANCE.getTickRate() / 20);
+        timer.setOverride(Math.max(TickRate.INSTANCE.getTickRate(), 1) / 20);   // prevent client just dying alongside with server
     }
 }

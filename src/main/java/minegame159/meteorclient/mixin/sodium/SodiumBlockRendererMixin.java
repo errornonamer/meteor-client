@@ -86,7 +86,7 @@ public class SodiumBlockRendererMixin {
             copy.setY(dstIndex, src.getY(srcIndex) + (float)offset.getY());
             copy.setZ(dstIndex, src.getZ(srcIndex) + (float)offset.getZ());
             int newColor = ColorABGR.mul(colors != null ? colors[srcIndex] : -1, light.br[srcIndex]);
-            int alpha = wallHack.opacity.get();
+            int alpha = (int) Math.round(ColorABGR.unpackAlpha(newColor) * wallHack.opacity.get());
             int blue = ColorABGR.unpackBlue(newColor);
             int green = ColorABGR.unpackGreen(newColor);
             int red = ColorABGR.unpackRed(newColor);

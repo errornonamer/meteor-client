@@ -47,7 +47,12 @@ public abstract class BlockEntityRenderDispatcherMixin {
         wra.setEntityOutlinesFramebuffer(Outlines.outlinesFbo);
 
         Outlines.vertexConsumerProvider.setColor(c.r, c.g, c.b, c.a);
-        render(blockEntity, tickDelta, matrix, Outlines.vertexConsumerProvider);
+        if (BlockEntityRenderDispatcher.INSTANCE.get(blockEntity) == null) {
+            // not rendered by BlockEntityRenderDispatcher mixin, we'll gonna have to draw these manually
+            //sesp.renderFullBlockOutline(blockEntity);
+        } else {
+            render(blockEntity, tickDelta, matrix, Outlines.vertexConsumerProvider);
+        }
 
         wra.setEntityOutlinesFramebuffer(fbo);
     }

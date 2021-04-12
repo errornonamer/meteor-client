@@ -15,6 +15,7 @@ import minegame159.meteorclient.systems.modules.Categories;
 import minegame159.meteorclient.systems.modules.Module;
 import minegame159.meteorclient.utils.entity.EntityUtils;
 import minegame159.meteorclient.utils.render.RenderUtils;
+import minegame159.meteorclient.utils.render.Outlines;
 import minegame159.meteorclient.utils.render.color.Color;
 import minegame159.meteorclient.utils.render.color.SettingColor;
 import minegame159.meteorclient.utils.world.Dir;
@@ -23,6 +24,9 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.block.entity.*;
 import net.minecraft.block.enums.ChestType;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.block.entity.BlockEntityRenderDispatcher;
 
 import java.util.Arrays;
 import java.util.List;
@@ -145,6 +149,39 @@ public class StorageESP extends Module {
         }
     }
 
+    private void box(VertexConsumer buffer, float x1, double y1, double z1, double x2, double y2, double z2) {
+        // top
+        buffer.vertex(x1, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        // bottom
+        buffer.vertex(x1, y1, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y1, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        // sides
+        buffer.vertex(x1, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y1, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y1, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+
+        buffer.vertex(x1, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y1, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+
+        buffer.vertex(x1, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x1, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+
+        buffer.vertex(x2, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y2, z2).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+        buffer.vertex(x2, y1, z1).color(sideColor.r, sideColor.g, sideColor.b, sideColor.a).texture(0.0f, 0.0f).light(0).normal(0.0f, 0.0f, 0.0f).next();
+    }
+
     @EventHandler
     private void onRender(RenderEvent event) {
         count = 0;
@@ -155,45 +192,46 @@ public class StorageESP extends Module {
             getTileEntityColor(blockEntity);
 
             if (render) {
-                double x1 = blockEntity.getPos().getX();
-                double y1 = blockEntity.getPos().getY();
-                double z1 = blockEntity.getPos().getZ();
-
-                double x2 = blockEntity.getPos().getX() + 1;
-                double y2 = blockEntity.getPos().getY() + 1;
-                double z2 = blockEntity.getPos().getZ() + 1;
-
-                int excludeDir = 0;
-                if (blockEntity instanceof ChestBlockEntity) {
-                    BlockState state = mc.world.getBlockState(blockEntity.getPos());
-                    if ((state.getBlock() == Blocks.CHEST || state.getBlock() == Blocks.TRAPPED_CHEST) && state.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) {
-                        excludeDir = Dir.get(ChestBlock.getFacing(state));
-                    }
-                }
-
-                if (blockEntity instanceof ChestBlockEntity || blockEntity instanceof EnderChestBlockEntity) {
-                    double a = 1.0 / 16.0;
-
-                    if (Dir.is(excludeDir, Dir.WEST)) x1 += a;
-                    if (Dir.is(excludeDir, Dir.NORTH)) z1 += a;
-
-                    if (Dir.is(excludeDir, Dir.EAST)) x2 -= a;
-                    y2 -= a * 2;
-                    if (Dir.is(excludeDir, Dir.SOUTH)) z2 -= a;
-                }
-
                 double dist = mc.player.squaredDistanceTo(blockEntity.getPos().getX() + 0.5, blockEntity.getPos().getY() + 0.5, blockEntity.getPos().getZ() + 0.5);
-                double a = 1;
-                if (dist <= fadeDistance.get() * fadeDistance.get()) a = dist / (fadeDistance.get() * fadeDistance.get());
+                double alpha = 1;
+                if (dist <= fadeDistance.get() * fadeDistance.get()) alpha = dist / (fadeDistance.get() * fadeDistance.get());
 
                 int prevLineA = lineColor.a;
                 int prevSideA = sideColor.a;
 
-                lineColor.a *= a;
-                sideColor.a *= a;
+                lineColor.a *= alpha;
+                sideColor.a *= alpha;
 
-                if (mode.get() == Mode.Box && a >= 0.075) {
-                    Renderer.boxWithLines(Renderer.NORMAL, Renderer.LINES, x1, y1, z1, x2, y2, z2, sideColor, lineColor, shapeMode.get(), excludeDir);
+                if (mode.get() == Mode.Box || BlockEntityRenderDispatcher.INSTANCE.get(blockEntity) == null) {
+                    float x1 = blockEntity.getPos().getX();
+                    double y1 = blockEntity.getPos().getY();
+                    double z1 = blockEntity.getPos().getZ();
+
+                    double x2 = blockEntity.getPos().getX() + 1;
+                    double y2 = blockEntity.getPos().getY() + 1;
+                    double z2 = blockEntity.getPos().getZ() + 1;
+
+                    int excludeDir = 0;
+                    if (blockEntity instanceof ChestBlockEntity) {
+                        BlockState state = mc.world.getBlockState(blockEntity.getPos());
+                        if ((state.getBlock() == Blocks.CHEST || state.getBlock() == Blocks.TRAPPED_CHEST) && state.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) {
+                            excludeDir = Dir.get(ChestBlock.getFacing(state));
+                        }
+                    }
+
+                    if (blockEntity instanceof ChestBlockEntity || blockEntity instanceof EnderChestBlockEntity) {
+                        double a = 1.0 / 16.0;
+
+                        if (Dir.is(excludeDir, Dir.WEST)) x1 += a;
+                        if (Dir.is(excludeDir, Dir.NORTH)) z1 += a;
+
+                        if (Dir.is(excludeDir, Dir.EAST)) x2 -= a;
+                        y2 -= a * 2;
+                        if (Dir.is(excludeDir, Dir.SOUTH)) z2 -= a;
+                    }
+                    if (alpha >= 0.075) {
+                        Renderer.boxWithLines(Renderer.NORMAL, Renderer.LINES, x1, y1, z1, x2, y2, z2, sideColor, lineColor, shapeMode.get(), excludeDir);
+                    }
                 }
 
                 if (tracers.get()) RenderUtils.drawTracerToBlockEntity(blockEntity, lineColor, event);
@@ -211,6 +249,7 @@ public class StorageESP extends Module {
         if (mode.get() != Mode.Outline) { return; }
 
         getTileEntityColor(event.blockEntity);
+        // rest will be handled in BlockEntityRenderDispatcher mixin
     }
 
     @Override
@@ -224,5 +263,16 @@ public class StorageESP extends Module {
 
     public boolean isOutline() {
         return mode.get() == Mode.Outline && render;
+    }
+
+    public void renderFullBlockOutline(BlockEntity blockEntity) {
+        float x1 = blockEntity.getPos().getX();
+        double y1 = blockEntity.getPos().getY();
+        double z1 = blockEntity.getPos().getZ();
+
+        double x2 = blockEntity.getPos().getX() + 1;
+        double y2 = blockEntity.getPos().getY() + 1;
+        double z2 = blockEntity.getPos().getZ() + 1;
+        box(Outlines.vertexConsumerProvider.getBuffer(RenderLayer.getSolid()), x1, y1, z1, x2, y2, z2);
     }
 }

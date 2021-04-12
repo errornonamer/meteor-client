@@ -7,6 +7,7 @@ package minegame159.meteorclient.systems.modules.render;
 
 import meteordevelopment.orbit.EventHandler;
 import minegame159.meteorclient.events.render.RenderEvent;
+import minegame159.meteorclient.events.render.RenderBlockEntityEvent;
 import minegame159.meteorclient.rendering.Renderer;
 import minegame159.meteorclient.rendering.ShapeMode;
 import minegame159.meteorclient.settings.*;
@@ -29,6 +30,11 @@ import java.util.List;
 public class StorageESP extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
 
+    public enum Mode {
+        Box,
+        Outline
+    }
+
     private final Setting<List<BlockEntityType<?>>> storageBlocks = sgGeneral.add(new StorageBlockListSetting.Builder()
             .name("storage-blocks")
             .description("Select the storage blocks to display.")
@@ -47,6 +53,13 @@ public class StorageESP extends Module {
             .name("shape-mode")
             .description("How the shapes are rendered.")
             .defaultValue(ShapeMode.Both)
+            .build()
+    );
+
+    private final Setting<StorageESP.Mode> mode = sgGeneral.add(new EnumSetting.Builder<StorageESP.Mode>()
+            .name("mode")
+            .description("Rendering mode.")
+            .defaultValue(StorageESP.Mode.Box)
             .build()
     );
 
@@ -179,7 +192,7 @@ public class StorageESP extends Module {
                 lineColor.a *= a;
                 sideColor.a *= a;
 
-                if (a >= 0.075) {
+                if (mode.get() == Mode.Box && a >= 0.075) {
                     Renderer.boxWithLines(Renderer.NORMAL, Renderer.LINES, x1, y1, z1, x2, y2, z2, sideColor, lineColor, shapeMode.get(), excludeDir);
                 }
 
@@ -193,8 +206,23 @@ public class StorageESP extends Module {
         }
     }
 
+    @EventHandler
+    public void onBlockEntityRender(RenderBlockEntityEvent event) {
+        if (mode.get() != Mode.Outline) { return; }
+
+        getTileEntityColor(event.blockEntity);
+    }
+
     @Override
     public String getInfoString() {
         return Integer.toString(count);
+    }
+
+    public Color getColor() {
+        return lineColor;
+    }
+
+    public boolean isOutline() {
+        return mode.get() == Mode.Outline && render;
     }
 }

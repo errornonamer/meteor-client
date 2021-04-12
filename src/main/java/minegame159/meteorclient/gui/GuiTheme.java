@@ -9,6 +9,7 @@ import minegame159.meteorclient.gui.renderer.packer.GuiTexture;
 import minegame159.meteorclient.gui.screens.AccountsScreen;
 import minegame159.meteorclient.gui.screens.ModuleScreen;
 import minegame159.meteorclient.gui.screens.ModulesScreen;
+import minegame159.meteorclient.gui.screens.ProxiesScreen;
 import minegame159.meteorclient.gui.tabs.TabScreen;
 import minegame159.meteorclient.gui.utils.CharFilter;
 import minegame159.meteorclient.gui.utils.SettingsWidgetFactory;
@@ -161,8 +162,12 @@ public abstract class GuiTheme implements ISerializable<GuiTheme> {
         return w(new WDoubleEdit(value, sliderMin, sliderMax));
     }
 
-    public WKeybind keybind(Keybind keybind, boolean addBindText) {
-        return w(new WKeybind(keybind, addBindText));
+    public WKeybind keybind(Keybind keybind) {
+        return keybind(keybind, -1);
+    }
+
+    public WKeybind keybind(Keybind keybind, int defaultValue) {
+        return w(new WKeybind(keybind, defaultValue));
     }
 
     public WWidget settings(Settings settings, String filter) {
@@ -188,6 +193,16 @@ public abstract class GuiTheme implements ISerializable<GuiTheme> {
     public WidgetScreen accountsScreen() {
         return new AccountsScreen(this);
     }
+
+    public WidgetScreen proxiesScreen() {
+        return new ProxiesScreen(this);
+    }
+    
+    // Colors
+
+    public abstract Color textColor();
+
+    public abstract Color textSecondaryColor();
 
     // Other
 
@@ -224,6 +239,10 @@ public abstract class GuiTheme implements ISerializable<GuiTheme> {
         config = new WindowConfig();
         windowConfigs.put(id, config);
         return config;
+    }
+
+    public void clearWindowConfigs() {
+        windowConfigs.clear();
     }
 
     protected <T extends WWidget> T w(T widget) {

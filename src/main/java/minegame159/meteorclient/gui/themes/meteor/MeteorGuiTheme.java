@@ -49,8 +49,8 @@ public class MeteorGuiTheme extends GuiTheme {
             .name("scale")
             .description("Scale of the GUI.")
             .defaultValue(1)
-            .min(1)
-            .sliderMin(1)
+            .min(0.75)
+            .sliderMin(0.75)
             .sliderMax(4)
             .onSliderRelease()
             .onChanged(aDouble -> {
@@ -90,9 +90,9 @@ public class MeteorGuiTheme extends GuiTheme {
     // Text
 
     public final Setting<SettingColor> textColor = color(sgTextColors, "text", "Color of text.", new SettingColor(255, 255, 255));
+    public final Setting<SettingColor> textSecondaryColor = color(sgTextColors, "text-secondary-text", "Color of secondary text.", new SettingColor(150, 150, 150));
     public final Setting<SettingColor> titleTextColor = color(sgTextColors, "title-text", "Color of title text.", new SettingColor(255, 255, 255));
     public final Setting<SettingColor> loggedInColor = color(sgTextColors, "logged-in-text", "Color of logged in account name.", new SettingColor(45, 225, 45));
-    public final Setting<SettingColor> accountTypeColor = color(sgTextColors, "account-type-text", "Color of account type text.", new SettingColor(150, 150, 150));
 
     // Background
 
@@ -258,6 +258,18 @@ public class MeteorGuiTheme extends GuiTheme {
     @Override
     public WTopBar topBar() {
         return w(new WMeteorTopBar());
+    }
+
+    // Colors
+
+    @Override
+    public Color textColor() {
+        return textColor.get();
+    }
+
+    @Override
+    public Color textSecondaryColor() {
+        return textSecondaryColor.get();
     }
 
     // Other

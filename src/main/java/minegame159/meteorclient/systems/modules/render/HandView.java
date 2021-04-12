@@ -115,9 +115,9 @@ public class HandView extends Module {
             .build()
     );
 
-    public final Setting<Boolean> noSwing = sgSwing.add(new BoolSetting.Builder()
-            .name("no-swing")
-            .description("Doesn't swing your hand if the two values above are 0 or 1.")
+    public final Setting<Boolean> offhandSwing = sgSwing.add(new BoolSetting.Builder()
+            .name("offhand-swing")
+            .description("Makes you swing with your off-hand instead of your main-hand.")
             .defaultValue(false)
             .build()
     );

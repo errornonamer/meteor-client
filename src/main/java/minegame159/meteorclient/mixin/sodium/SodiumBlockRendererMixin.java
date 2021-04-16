@@ -12,15 +12,22 @@ import me.jellysquid.mods.sodium.client.model.quad.ModelQuadViewMutable;
 import me.jellysquid.mods.sodium.client.model.quad.blender.BiomeColorBlender;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadOrientation;
+import me.jellysquid.mods.sodium.client.model.quad.sink.FallbackQuadSink;
 import me.jellysquid.mods.sodium.client.model.quad.sink.ModelQuadSinkDelegate;
 import me.jellysquid.mods.sodium.client.render.pipeline.BlockRenderer;
 import me.jellysquid.mods.sodium.client.util.ModelQuadUtil;
 import me.jellysquid.mods.sodium.client.util.color.ColorABGR;
+import minegame159.meteorclient.mixin.WorldRendererAccessor;
 import minegame159.meteorclient.systems.modules.Modules;
-import minegame159.meteorclient.systems.modules.render.WallHack;
-import minegame159.meteorclient.systems.modules.render.Xray;
+import minegame159.meteorclient.systems.modules.render.*;
+import minegame159.meteorclient.utils.render.Outlines;
+import minegame159.meteorclient.utils.render.color.Color;
 import net.minecraft.block.BlockState;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.color.block.BlockColorProvider;
+import net.minecraft.client.gl.Framebuffer;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.render.model.BakedQuad;
 import net.minecraft.util.math.BlockPos;
@@ -48,11 +55,29 @@ public class SodiumBlockRendererMixin {
 
     @Inject(method = "renderQuad", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/model/quad/ModelQuadViewMutable;setColor(II)V", shift = At.Shift.AFTER), cancellable = true)
     private void onRenderQuad(BlockRenderView world, BlockState state, BlockPos pos, ModelQuadSinkDelegate consumer, Vec3d offset, BlockColorProvider colorProvider, BakedQuad bakedQuad, QuadLightData light, ModelQuadFacing facing, CallbackInfo ci) {
+        StorageESP sesp = Modules.get().get(StorageESP.class);
         WallHack wallHack = Modules.get().get(WallHack.class);
+
+        /*if (sesp.isActive() && sesp.isOutline()) {
+            if (sesp.isTargetBlock(state.getBlock())) {
+                Color c = sesp.getColor();
+
+                WorldRenderer wr = MinecraftClient.getInstance().worldRenderer;
+                WorldRendererAccessor wra = (WorldRendererAccessor) wr;
+
+                Framebuffer fbo = wr.getEntityOutlinesFramebuffer();
+                wra.setEntityOutlinesFramebuffer(Outlines.outlinesFbo);
+                Outlines.vertexConsumerProvider.setColor(c.r, c.g, c.b, c.a);
+
+
+
+                wra.setEntityOutlinesFramebuffer(fbo);
+            }
+        }*/
 
         if(wallHack.isActive()) {
             if(wallHack.blocks.get().contains(state.getBlock())) {
-                whRenderQuad(world, state, pos, consumer, offset, colorProvider, bakedQuad, light, facing, wallHack);
+                whRenderQuad(world, state, pos, consumer, offset, colorProvider, bakedQuad, light, facing, wallHack.opacity.get());
                 ci.cancel();
             }
         }
@@ -70,7 +95,7 @@ public class SodiumBlockRendererMixin {
     //https://github.com/CaffeineMC/sodium-fabric/blob/5af41c180e63590b7797b864393ef584a746eccd/src/main/java/me/jellysquid/mods/sodium/client/render/pipeline/BlockRenderer.java#L112
     //Copied from Sodium, for now, can't think of a better way, because of the nature of the locals, and for loop.
     //Mixin seems to freak out when I try to do this the "right" way - Wala (sobbing)
-    private void whRenderQuad(BlockRenderView world, BlockState state, BlockPos pos, ModelQuadSinkDelegate consumer, Vec3d offset, BlockColorProvider colorProvider, BakedQuad bakedQuad, QuadLightData light, ModelQuadFacing facing, WallHack wallHack) {
+    private void whRenderQuad(BlockRenderView world, BlockState state, BlockPos pos, ModelQuadSinkDelegate consumer, Vec3d offset, BlockColorProvider colorProvider, BakedQuad bakedQuad, QuadLightData light, ModelQuadFacing facing, double wallHack) {
         ModelQuadView src = (ModelQuadView)bakedQuad;
         ModelQuadOrientation order = ModelQuadOrientation.orient(light.br);
         ModelQuadViewMutable copy = cachedQuad;
@@ -86,7 +111,7 @@ public class SodiumBlockRendererMixin {
             copy.setY(dstIndex, src.getY(srcIndex) + (float)offset.getY());
             copy.setZ(dstIndex, src.getZ(srcIndex) + (float)offset.getZ());
             int newColor = ColorABGR.mul(colors != null ? colors[srcIndex] : -1, light.br[srcIndex]);
-            int alpha = (int) Math.round(ColorABGR.unpackAlpha(newColor) * wallHack.opacity.get());
+            int alpha = (int) Math.round(ColorABGR.unpackAlpha(newColor) * wallHack);
             int blue = ColorABGR.unpackBlue(newColor);
             int green = ColorABGR.unpackGreen(newColor);
             int red = ColorABGR.unpackRed(newColor);

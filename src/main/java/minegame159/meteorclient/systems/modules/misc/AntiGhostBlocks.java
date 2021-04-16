@@ -41,7 +41,7 @@ public class AntiGhostBlocks extends Module {
     );
 
     private final Setting<Integer> sendDelay = sgGeneral.add(new IntSetting.Builder()
-        .name("delay")
+        .name("delay-between")
         .description("delay between requests")
         .defaultValue(5)
         .min(1)
@@ -51,7 +51,7 @@ public class AntiGhostBlocks extends Module {
     );
     
     private final HashMap<BlockPos, Long> blocks = new HashMap<BlockPos, Long>();
-    private boolean lock = false;   // gay but idk how to do cocurrent stuff in java
+    private boolean lock = false;   // gay but idk how to do concurrent stuff in java
     private long lastRequest = 0;
 
     @EventHandler
@@ -104,7 +104,7 @@ public class AntiGhostBlocks extends Module {
     private void onTick(TickEvent.Post event) {
         long time = mc.world.getTime();
 
-        if (blocks.isEmpty() || time - lastRequest < sendDelay.get() || lock) {
+        if (blocks.isEmpty() || mc.interactionManager == null || mc.interactionManager.isBreakingBlock() || time - lastRequest < sendDelay.get() || lock) {
             return;
         }
 
@@ -121,9 +121,7 @@ public class AntiGhostBlocks extends Module {
             }
         });
         lock = true;
-        toRemove.forEach(pos -> {
-            blocks.remove(pos);
-        });
+        toRemove.forEach(blocks::remove);
         lock = false;
     }
     

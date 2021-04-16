@@ -5,13 +5,19 @@
 
 package minegame159.meteorclient.mixin.indigo;
 
+import minegame159.meteorclient.mixin.WorldRendererAccessor;
 import minegame159.meteorclient.systems.modules.Modules;
-import minegame159.meteorclient.systems.modules.render.WallHack;
+import minegame159.meteorclient.systems.modules.render.*;
+import minegame159.meteorclient.utils.render.Outlines;
+import minegame159.meteorclient.utils.render.color.Color;
 import net.fabricmc.fabric.impl.client.indigo.renderer.mesh.MutableQuadViewImpl;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.AbstractQuadRenderer;
 import net.fabricmc.fabric.impl.client.indigo.renderer.render.BlockRenderInfo;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.Framebuffer;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.VertexConsumer;
+import net.minecraft.client.render.WorldRenderer;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.util.math.Matrix3f;
 import net.minecraft.util.math.Matrix4f;
@@ -50,10 +56,30 @@ public abstract class AbstractQuadRendererMixin {
     @Shadow protected abstract Matrix3f normalMatrix();
 
     @SuppressWarnings("UnresolvedMixinReference")
-    @Inject(method = "bufferQuad(Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;Lnet/minecraft/class_1921;)V",
+    //@Inject(method = "bufferQuad(Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;Lnet/minecraft/class_1921;)V",
+    //at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "bufferQuad(Lnet/fabricmc/fabric/impl/client/indigo/renderer/mesh/MutableQuadViewImpl;Lnet/minecraft/client/render/RenderLayer;)V",
     at = @At("HEAD"), cancellable = true, remap = false)
     private void onBufferQuad(MutableQuadViewImpl quad, RenderLayer renderLayer, CallbackInfo ci) {
+        StorageESP sesp = Modules.get().get(StorageESP.class);
         WallHack wallHack = Modules.get().get(WallHack.class);
+
+        /*if (sesp.isActive() && sesp.isOutline()) {
+            if (sesp.isTargetBlock(blockInfo.blockState.getBlock())) {
+                Color c = sesp.getColor();
+
+                WorldRenderer wr = MinecraftClient.getInstance().worldRenderer;
+                WorldRendererAccessor wra = (WorldRendererAccessor) wr;
+
+                Framebuffer fbo = wr.getEntityOutlinesFramebuffer();
+                wra.setEntityOutlinesFramebuffer(Outlines.outlinesFbo);
+                Outlines.vertexConsumerProvider.setColor(c.r, c.g, c.b, c.a);
+
+                bufferQuad(Outlines.vertexConsumerProvider.getBuffer(renderLayer), quad, matrix(), overlay(), normalMatrix(), normalVec);
+
+                wra.setEntityOutlinesFramebuffer(fbo);
+            }
+        }*/
 
         if(wallHack.isActive()) {
             if(wallHack.blocks.get().contains(blockInfo.blockState.getBlock())) {

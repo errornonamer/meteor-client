@@ -36,7 +36,7 @@ public abstract class BlockEntityRenderDispatcherMixin {
         if (vertexConsumerProvider == Outlines.vertexConsumerProvider) return;
 
         StorageESP sesp = Modules.get().get(StorageESP.class);
-        if (!sesp.isActive() || !sesp.isOutline()) return;
+        if (!sesp.isActive() || !sesp.shouldRenderOutline()) return;
 
         Color c = sesp.getColor();
 

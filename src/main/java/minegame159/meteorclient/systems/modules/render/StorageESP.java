@@ -19,6 +19,7 @@ import minegame159.meteorclient.utils.render.Outlines;
 import minegame159.meteorclient.utils.render.color.Color;
 import minegame159.meteorclient.utils.render.color.SettingColor;
 import minegame159.meteorclient.utils.world.Dir;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.ChestBlock;
@@ -261,8 +262,21 @@ public class StorageESP extends Module {
         return lineColor;
     }
 
-    public boolean isOutline() {
+    public boolean shouldRenderOutline() {
         return mode.get() == Mode.Outline && render;
+    }
+
+    public boolean isOutline() {
+        return mode.get() == Mode.Outline;
+    }
+
+    public boolean isTargetBlock(Block block) {
+        for (BlockEntityType<?> e : storageBlocks.get()) {
+            if (e.supports(block)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void renderFullBlockOutline(BlockEntity blockEntity) {

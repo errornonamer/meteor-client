@@ -90,6 +90,7 @@ public class Trajectories extends Module {
     @EventHandler
     private void onRender(RenderEvent event) {
         if (drawOther.get()) {
+            // todo: cache predicted trajectories for other projectiles instead of predicting them every frame for extra performance gain
             for (Entity e : mc.world.getEntities()) {
                 if (e instanceof ProjectileEntity) {
                     if (e instanceof FishingBobberEntity) {
@@ -106,7 +107,7 @@ public class Trajectories extends Module {
                     Vec3d pos = e.getPos();
                     Vec3d vel = e.getVelocity();
                     
-                    calculatePath(event.tickDelta, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, getEntityGravity(e), e, e.getBoundingBox());
+                    calculatePath(event.tickDelta, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z, getEntityGravity(e), e, new Box(1.0, 1.0, 1.0, 1.0, 1.0, 1.0)/*e.getBoundingBox()*/);  // hack: bounding box doesn't seems to be the hitbox used for hit detection
                     render();
                 }
             }
@@ -199,9 +200,16 @@ public class Trajectories extends Module {
             Vec3 pos = addToPath(x, y, z);
 
             // Apply motion
-            x += velocityX * 0.1;
-            y += velocityY * 0.1;
-            z += velocityZ * 0.1;
+            // hacky optimization: make projectiles with no gravity move 100t (5s) each iteration
+            if (gravity == 0.0) {
+                x += velocityX * 10.0;
+                y += velocityY * 10.0;
+                z += velocityZ * 10.0;
+            } else {
+                x += velocityX * 0.1;
+                y += velocityY * 0.1;
+                z += velocityZ * 0.1;
+            }
 
             if (y < 0) break;
 
@@ -246,6 +254,7 @@ public class Trajectories extends Module {
             hitQuadX2 = r.getPos().x;
             hitQuadY2 = r.getPos().y;
             hitQuadZ2 = r.getPos().z;
+            addToPath(r.getPos().x, r.getPos().y, r.getPos().z);
 
             if (r.getSide() == Direction.UP || r.getSide() == Direction.DOWN) {
                 hitQuadHorizontal = true;
@@ -286,10 +295,11 @@ public class Trajectories extends Module {
             hitBoxMaxX = ex + bbox.maxX;
             hitBoxMaxY = ey + bbox.maxY;
             hitBoxMaxZ = ez + bbox.maxZ;
-
+            addToPath(r.getPos().x, r.getPos().y, r.getPos().z);
         } else {
             hitQuad = false;
             hitBox = false;
+            addToPath(x, y, z);
         }
     }
 

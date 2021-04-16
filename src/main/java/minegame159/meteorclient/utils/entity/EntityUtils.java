@@ -5,6 +5,7 @@
 
 package minegame159.meteorclient.utils.entity;
 
+import com.google.gson.*;
 import minegame159.meteorclient.systems.friends.Friends;
 import minegame159.meteorclient.utils.Utils;
 import minegame159.meteorclient.utils.misc.text.TextUtils;
@@ -21,9 +22,13 @@ import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameMode;
+import org.apache.commons.io.IOUtils;
 
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 public class EntityUtils {
@@ -136,6 +141,18 @@ public class EntityUtils {
         return playerListEntry.getGameMode();
     }
 
+    public static String getPlayerNameFromUUID(UUID id) {
+        try {
+            final NameLookup process = new NameLookup(id);
+            final Thread thread = new Thread(process);
+            thread.start();
+            thread.join();
+            return process.getName();
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
     public static boolean isAboveWater(Entity entity) {
         BlockPos.Mutable blockPos = entity.getBlockPos().mutableCopy();
 
@@ -176,5 +193,52 @@ public class EntityUtils {
         double d = (mc.options.viewDistance + 1) * 16;
 
         return x < d && z < d;
+    }
+
+    public static class NameLookup implements Runnable {
+        private final String uuidstr;
+        private final UUID uuid;
+        private volatile String name;
+
+        public NameLookup(final String input) {
+            this.uuidstr = input;
+            this.uuid = UUID.fromString(input);
+        }
+
+        public NameLookup(final UUID input) {
+            this.uuid = input;
+            this.uuidstr = input.toString();
+        }
+
+        @Override
+        public void run() {
+            this.name = this.lookUpName();
+        }
+
+        public String lookUpName() {
+            PlayerEntity player = null;
+            if (mc.world != null) {
+                player = mc.world.getPlayerByUuid(uuid);
+            }
+            if (player == null) {
+                final String url = "https://api.mojang.com/user/profiles/" + this.uuidstr.replace("-", "") + "/names";
+                try {
+                    final JsonParser parser = new JsonParser();
+                    final String nameJson = IOUtils.toString(new URL(url), StandardCharsets.UTF_8);
+                    final JsonElement nameElement = parser.parse(nameJson);
+                    final JsonArray nameArray = nameElement.getAsJsonArray();
+                    final String playerSlot = nameArray.get(nameArray.size() - 1).toString();
+                    final JsonObject nameObject = parser.parse(playerSlot).getAsJsonObject();
+                    return nameObject.get("name").toString();
+                } catch (Exception e) {
+                    return null;
+                }
+            }
+            return player.getName().asString();
+        }
+
+        public String getName() {
+            return this.name;
+        }
     }
 }

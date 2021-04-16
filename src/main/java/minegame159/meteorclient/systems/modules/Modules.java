@@ -529,8 +529,9 @@ public class Modules extends System<Modules> {
 
     private void initMisc() {
         add(new Announcer());
-        add(new AntiPacketKick());
         add(new AntiGhostBlocks());
+        add(new AntiPacketKick());
+        add(new AntiVanish());
         add(new AutoReconnect());
         add(new BetterChat());
         add(new BookBot());

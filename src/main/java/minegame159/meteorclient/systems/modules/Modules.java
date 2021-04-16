@@ -28,6 +28,7 @@ import minegame159.meteorclient.systems.modules.movement.speed.Speed;
 import minegame159.meteorclient.systems.modules.player.*;
 import minegame159.meteorclient.systems.modules.render.*;
 import minegame159.meteorclient.systems.modules.render.hud.HUD;
+import minegame159.meteorclient.systems.modules.render.search.Search;
 import minegame159.meteorclient.systems.modules.world.Timer;
 import minegame159.meteorclient.systems.modules.world.*;
 import minegame159.meteorclient.utils.Utils;
@@ -491,7 +492,6 @@ public class Modules extends System<Modules> {
         add(new Xray());
         add(new BossStack());
         add(new ItemHighlight());
-        add(new ModelTweaks());
         add(new LightOverlay());
         add(new Zoom());
         add(new WallHack());

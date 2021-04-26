@@ -19,6 +19,7 @@ import minegame159.meteorclient.utils.render.color.SettingColor;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.item.*;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.EntityHitResult;
@@ -48,6 +49,13 @@ public class Trajectories extends Module {
             .name("accurate")
             .description("Calculates accurate trajectories while moving.")
             .defaultValue(true)
+            .build()
+    );
+
+    private final Setting<Boolean> others = sgGeneral.add(new BoolSetting.Builder()
+            .name("others")
+            .description("Render already thrown projectiles too")
+            .defaultValue(false)
             .build()
     );
 
@@ -108,8 +116,14 @@ public class Trajectories extends Module {
     }
 
     private void calculatePath(RenderEvent event) {
-        // Clear paths
-        for (Path path : paths) path.clear();
+        if (others.get()) {
+            for (Entity e : mc.world.getEntities()) {
+                if (e instanceof ProjectileEntity) {
+                    if (!simulator.set((ProjectileEntity) e)) continue;
+                    getEmptyPath().calculate();
+                }
+            }
+        }
 
         // Get item
         ItemStack itemStack = mc.player.getMainHandStack();
@@ -132,6 +146,9 @@ public class Trajectories extends Module {
 
     @EventHandler
     private void onRender(RenderEvent event) {
+        // Clear paths
+        for (Path path : paths) path.clear();
+
         calculatePath(event);
 
         for (Path path : paths) path.render(event);
@@ -156,7 +173,8 @@ public class Trajectories extends Module {
         public void calculate() {
             addPoint();
 
-            while (true) {
+            //while (true) {
+            for (int i = 0; i < 10000; i++) {
                 HitResult result = simulator.tick();
 
                 if (result != null) {

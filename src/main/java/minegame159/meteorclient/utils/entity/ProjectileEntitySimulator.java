@@ -12,10 +12,15 @@ import minegame159.meteorclient.utils.misc.MissHitResult;
 import minegame159.meteorclient.utils.misc.Vec3;
 import net.minecraft.client.util.math.Vector3f;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.projectile.ProjectileUtil;
+import net.minecraft.entity.projectile.*;
+import net.minecraft.entity.projectile.thrown.ExperienceBottleEntity;
+import net.minecraft.entity.projectile.thrown.PotionEntity;
+import net.minecraft.entity.projectile.thrown.SnowballEntity;
+import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.*;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.*;
 import net.minecraft.world.RaycastContext;
@@ -33,6 +38,8 @@ public class ProjectileEntitySimulator {
 
     private double gravity;
     private double airDrag, waterDrag;
+    private boolean other;
+    private Entity projectileEntity;
 
     public boolean set(Entity user, ItemStack itemStack, double simulated, boolean accurate, double tickDelta) {
         Item item = itemStack.getItem();
@@ -67,6 +74,71 @@ public class ProjectileEntitySimulator {
             return false;
         }
 
+        return true;
+    }
+
+    public boolean set(ProjectileEntity projectile) {
+        CompoundTag tag = new CompoundTag();
+        projectile.toTag(tag);
+
+        if (tag.contains("inGround")) {
+            if (tag.getBoolean("inGround")) {
+                return false;
+            }
+        }
+
+        pos.set(projectile.getPos());
+        velocity.set(projectile.getVelocity());
+
+        if (projectile instanceof TridentEntity) {
+            gravity = 0.05000000074505806;
+            airDrag = 0.99;
+            waterDrag = 0.99;
+        }
+        else if (projectile instanceof PersistentProjectileEntity) {
+            gravity = 0.05000000074505806;
+            airDrag = 0.99;
+            waterDrag = 0.6;
+        }
+        else if (projectile instanceof FishingBobberEntity) {
+            gravity = 0.03;
+            airDrag = 0.92;
+            waterDrag = 0;
+        }
+        else if (projectile instanceof PotionEntity) {
+            gravity = 0.05;
+            airDrag = 0.99;
+            waterDrag = 0.8;
+        }
+        else if (projectile instanceof ExperienceBottleEntity) {
+            gravity = 0.07;
+            airDrag = 0.99;
+            waterDrag = 0.8;
+        }
+        else if (projectile instanceof ThrownItemEntity) {
+            gravity = 0.03;
+            airDrag = 0.99;
+            waterDrag = 0.8;
+        }
+        else if (projectile instanceof LlamaSpitEntity) {
+            gravity = 0.05999999865889549D;
+            airDrag = 0.99;
+            waterDrag = 0.99;
+        }
+        else if (projectile instanceof ExplosiveProjectileEntity) {
+            gravity = 0.0;
+            airDrag = 0.95;
+            waterDrag = 0.8;
+        }
+        else {
+            return false;
+        }
+
+        if (projectile.hasNoGravity()) {
+            gravity = 0.0;
+        }
+        other = true;
+        projectileEntity = projectile;
         return true;
     }
 
@@ -105,6 +177,7 @@ public class ProjectileEntitySimulator {
         this.gravity = gravity;
         this.airDrag = 0.99;
         this.waterDrag = waterDrag;
+        this.other = false;
     }
 
     public void setFishingBobber(Entity user, double tickDelta) {
@@ -131,14 +204,17 @@ public class ProjectileEntitySimulator {
     public HitResult tick() {
         // Apply velocity
         ((IVec3d) prevPos3d).set(pos);
-        pos.add(velocity);
 
-        // Update velocity
-        velocity.multiply(isTouchingWater() ? waterDrag : airDrag);
-        velocity.subtract(0, gravity, 0);
+        if (gravity == 0.0) {
+            pos.add(velocity.multiply(200));
+        }
+        else {
+            pos.add(velocity);
 
-        // Check if below 0
-        if (pos.y < 0) return MissHitResult.INSTANCE;
+            // Update velocity
+            velocity.multiply(isTouchingWater() ? waterDrag : airDrag);
+            velocity.subtract(0, gravity, 0);
+        }
 
         // Check if chunk is loaded
         int chunkX = (int) (pos.x / 16);
@@ -149,7 +225,7 @@ public class ProjectileEntitySimulator {
         ((IVec3d) pos3d).set(pos);
         HitResult hitResult = getCollision();
 
-        return hitResult.getType() == HitResult.Type.MISS ? null : hitResult;
+        return (hitResult.getType() == HitResult.Type.MISS ? (pos.y < 0 ? MissHitResult.INSTANCE : null) : hitResult);
     }
 
     private boolean isTouchingWater() {
@@ -169,7 +245,7 @@ public class ProjectileEntitySimulator {
             vec3d3 = hitResult.getPos();
         }
 
-        HitResult hitResult2 = ProjectileUtil.getEntityCollision(mc.world, mc.player, vec3d3, pos3d, new Box(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z).stretch(mc.player.getVelocity()).expand(1.0D), entity -> !entity.isSpectator() && entity.isAlive() && entity.collides());
+        HitResult hitResult2 = ProjectileUtil.getEntityCollision(mc.world, other ? projectileEntity : mc.player, vec3d3, pos3d, new Box(pos.x, pos.y, pos.z, pos.x, pos.y, pos.z).stretch(mc.player.getVelocity()).expand(1.0D), entity -> !entity.isSpectator() && entity.isAlive() && entity.collides());
         if (hitResult2 != null) {
             hitResult = hitResult2;
         }

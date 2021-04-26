@@ -426,6 +426,7 @@ public class Modules extends System<Modules> {
         add(new AutoGap());
         add(new AutoEat());
         add(new PotionSaver());
+        add(new BowAimbot());
     }
 
     private void initMovement() {
@@ -547,7 +548,6 @@ public class Modules extends System<Modules> {
         add(new StrongholdFinder());
         add(new VisualRange());
         add(new VanillaSpoof());
-        add(new AntiBot());
         add(new BetterTab());
     }
 

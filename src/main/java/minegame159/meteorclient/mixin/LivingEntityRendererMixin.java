@@ -12,6 +12,7 @@ import minegame159.meteorclient.utils.Utils;
 import minegame159.meteorclient.utils.misc.text.TextUtils;
 import minegame159.meteorclient.utils.player.Rotations;
 import minegame159.meteorclient.utils.render.color.Color;
+import minegame159.meteorclient.utils.render.Outlines;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.RenderLayer;
@@ -34,6 +35,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 @Mixin(LivingEntityRenderer.class)
 public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extends EntityModel<T>> {
+    @Shadow protected abstract void render(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i);
     @Shadow @Nullable protected abstract RenderLayer getRenderLayer(T entity, boolean showBody, boolean translucent, boolean showOutline);
 
     //Freecam
@@ -72,7 +74,68 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
     //Chams
 
     //Depth
-    @Inject(method = "render", at = @At("HEAD"))
+    @Inject(method = "render", at = @At("HEAD"), cancellable = true)
+    private void onRender(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
+        Chams chams = Modules.get().get(Chams.class);
+        if (chams.rendering) return;
+        if (vertexConsumerProvider == Outlines.vertexConsumerProvider) return;
+
+        if (chams.isActive()) {
+            chams.rendering = true;
+            if (chams.shouldRender(livingEntity)) {
+                // ignore z
+                glEnable(GL_POLYGON_OFFSET_FILL);
+                glDisable(GL_DEPTH_TEST);
+                glDepthMask(false);
+                glPolygonOffset(1.0f, -1100000.0f);
+
+                chams.xqz = true;
+                render(livingEntity, f, g, matrixStack, vertexConsumerProvider, chams.fullbrightInv.get() ? (15 << 4 | 15 << 20) : i);
+                chams.xqz = false;
+
+                glPolygonOffset(1.0f, 1099999.99f);
+                glDepthMask(true);
+                glEnable(GL_DEPTH_TEST);
+                glDisable(GL_POLYGON_OFFSET_FILL);
+
+                render(livingEntity, f, g, matrixStack, vertexConsumerProvider, chams.overrideVisible.get() && chams.fullbright.get() ? (15 << 4 | 15 << 20) : i);
+                glPolygonOffset(1.0f, 0.01f);
+            } else {
+                render(livingEntity, f, g, matrixStack, vertexConsumerProvider, chams.overrideVisible.get() && chams.fullbright.get() ? (15 << 4 | 15 << 20) : i);
+            }
+            ci.cancel();
+            chams.rendering = false;
+            chams.xqz = false;
+        }
+    }
+
+    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;getRenderLayer(Lnet/minecraft/entity/LivingEntity;ZZZ)Lnet/minecraft/client/render/RenderLayer;"))
+    private RenderLayer getRenderLayer(LivingEntityRenderer<T, M> livingEntityRenderer, T livingEntity, boolean showBody, boolean translucent, boolean showOutline) {
+        Chams module = Modules.get().get(Chams.class);
+        if (!module.isActive()) return getRenderLayer(livingEntity, showBody, translucent, showOutline);
+        if (module.ignoreSelf.get() && livingEntity == MinecraftClient.getInstance().player) return getRenderLayer(livingEntity, showBody, translucent, showOutline);
+
+        boolean hasTexture = (!module.xqz && (!module.overrideVisible.get() || module.texture.get())) ||
+                (module.xqz && module.textureInv.get());
+        return hasTexture ? getRenderLayer(livingEntity, module.xqz || showBody, translucent, showOutline) : RenderLayer.getItemEntityTranslucentCull(Chams.BLANK);
+    }
+
+    @SuppressWarnings("UnresolvedMixinReference")
+    @ModifyArgs(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/model/EntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V"))
+    private void modifyColor(Args args, T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i) {
+        Chams module = Modules.get().get(Chams.class);
+        if (!module.isActive()) return;
+        if (module.ignoreSelf.get() && livingEntity == MinecraftClient.getInstance().player) return;
+        if (!module.xqz && !module.overrideVisible.get()) return;
+
+        Color color = module.getColor(livingEntity);
+        args.set(4, color.r / 255f);
+        args.set(5, color.g / 255f);
+        args.set(6, color.b / 255f);
+        args.set(7, color.a / 255f);
+    }
+
+    /*@Inject(method = "render", at = @At("HEAD"))
     private void renderHead(T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i, CallbackInfo ci) {
         Chams chams = Modules.get().get(Chams.class);
 
@@ -90,7 +153,7 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
             glPolygonOffset(1.0f, 1100000.0f);
             glDisable(GL_POLYGON_OFFSET_FILL);
         }
-    }
+    }*/
 
     //Player stuff below
 
@@ -104,28 +167,5 @@ public abstract class LivingEntityRendererMixin<T extends LivingEntity, M extend
         args.set(0, -module.playersScale.get().floatValue());
         args.set(1, -module.playersScale.get().floatValue());
         args.set(2, module.playersScale.get().floatValue());
-    }
-
-    @SuppressWarnings("UnresolvedMixinReference")
-    @ModifyArgs(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/model/EntityModel;render(Lnet/minecraft/client/util/math/MatrixStack;Lnet/minecraft/client/render/VertexConsumer;IIFFFF)V"))
-    private void modifyColor(Args args, T livingEntity, float f, float g, MatrixStack matrixStack, VertexConsumerProvider vertexConsumerProvider, int i) {
-        Chams module = Modules.get().get(Chams.class);
-        if (!module.isActive() || !module.players.get() || !(livingEntity instanceof PlayerEntity)) return;
-        if (module.ignoreSelf.get() && livingEntity == MinecraftClient.getInstance().player) return;
-
-        Color color = module.useNameColor.get() ? TextUtils.getMostPopularColor(livingEntity.getDisplayName()) : module.playersColor.get();
-        args.set(4, color.r / 255f);
-        args.set(5, color.g / 255f);
-        args.set(6, color.b / 255f);
-        args.set(7, module.playersColor.get().a / 255f);
-    }
-
-    @Redirect(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/render/entity/LivingEntityRenderer;getRenderLayer(Lnet/minecraft/entity/LivingEntity;ZZZ)Lnet/minecraft/client/render/RenderLayer;"))
-    private RenderLayer getRenderLayer(LivingEntityRenderer<T, M> livingEntityRenderer, T livingEntity, boolean showBody, boolean translucent, boolean showOutline) {
-        Chams module = Modules.get().get(Chams.class);
-        if (!module.isActive() || !module.players.get() || !(livingEntity instanceof PlayerEntity) || module.playersTexture.get()) return getRenderLayer(livingEntity, showBody, translucent, showOutline);
-        if (module.ignoreSelf.get() && livingEntity == MinecraftClient.getInstance().player) return getRenderLayer(livingEntity, showBody, translucent, showOutline);
-
-        return RenderLayer.getItemEntityTranslucentCull(Chams.BLANK);
     }
 }

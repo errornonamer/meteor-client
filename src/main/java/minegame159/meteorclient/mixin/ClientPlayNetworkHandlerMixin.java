@@ -16,13 +16,17 @@ import minegame159.meteorclient.events.world.ChunkDataEvent;
 import minegame159.meteorclient.mixininterface.IExplosionS2CPacket;
 import minegame159.meteorclient.systems.modules.Modules;
 import minegame159.meteorclient.systems.modules.movement.Velocity;
+import minegame159.meteorclient.systems.modules.misc.SRPBypass;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.network.ClientConnection;
+import net.minecraft.network.packet.c2s.play.ResourcePackStatusC2SPacket;
 import net.minecraft.network.packet.s2c.play.*;
 import net.minecraft.world.chunk.WorldChunk;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -32,6 +36,8 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 @Mixin(ClientPlayNetworkHandler.class)
 public abstract class ClientPlayNetworkHandlerMixin {
+    @Shadow @Final private ClientConnection connection;
+
     @Shadow private MinecraftClient client;
 
     @Shadow private ClientWorld world;
@@ -90,6 +96,18 @@ public abstract class ClientPlayNetworkHandlerMixin {
 
         if (itemEntity instanceof ItemEntity && entity == client.player) {
             MeteorClient.EVENT_BUS.post(PickItemsEvent.get(((ItemEntity) itemEntity).getStack(), packet.getStackAmount()));
+        }
+    }
+
+    @Inject(method = "sendResourcePackStatus", at = @At(value = "HEAD"), cancellable = true)
+    private void onSendResourcePackStatus(ResourcePackStatusC2SPacket.Status packStatus, CallbackInfo info) {
+        SRPBypass module = Modules.get().get(SRPBypass.class);
+        if (!module.isActive()) return;
+
+        if (packStatus != ResourcePackStatusC2SPacket.Status.ACCEPTED && packStatus != ResourcePackStatusC2SPacket.Status.SUCCESSFULLY_LOADED) {
+            connection.send(new ResourcePackStatusC2SPacket(ResourcePackStatusC2SPacket.Status.ACCEPTED));
+            connection.send(new ResourcePackStatusC2SPacket(ResourcePackStatusC2SPacket.Status.SUCCESSFULLY_LOADED));
+            info.cancel();
         }
     }
 }
